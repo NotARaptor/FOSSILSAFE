@@ -2110,7 +2110,6 @@ SYSTEM_PACKAGES=(
   coreutils
   curl
   fuse3
-  libfuse3-3
   gzip
   lsscsi
   mt-st
@@ -2124,6 +2123,7 @@ SYSTEM_PACKAGES=(
   tar
   util-linux
   nodejs
+  npm
   certbot
   python3-certbot-nginx
 )
@@ -2134,7 +2134,6 @@ if [[ "${HEADLESS}" -eq 1 ]]; then
     coreutils
     curl
     fuse3
-    libfuse3-3
     gzip
     lsscsi
     mt-st
@@ -2147,6 +2146,15 @@ if [[ "${HEADLESS}" -eq 1 ]]; then
     tar
     util-linux
   )
+fi
+
+# Debian 12 ships libfuse3-3; Debian 13+ ships libfuse3-4.
+if apt_package_available "libfuse3-4"; then
+  SYSTEM_PACKAGES+=(libfuse3-4)
+elif apt_package_available "libfuse3-3"; then
+  SYSTEM_PACKAGES+=(libfuse3-3)
+else
+  warn "No libfuse3 runtime package found in apt; FUSE/LTFS may not work."
 fi
 
 if [[ "${CHANGER_REQUIRED}" -eq 1 ]]; then
@@ -2372,12 +2380,15 @@ step_header "[8/${STEP_TOTAL}] Installing FossilSafe files" \
 if command -v rsync >/dev/null; then
   rsync -a --delete "${SOURCE_ROOT}/backend" "${INSTALL_DIR}/"
   rsync -a --delete "${SOURCE_ROOT}/frontend" "${INSTALL_DIR}/"
+  rsync -a --delete "${SOURCE_ROOT}/packaging" "${INSTALL_DIR}/"
   rsync -a "${SOURCE_ROOT}/gunicorn.conf.py" "${INSTALL_DIR}/gunicorn.conf.py"
+  rsync -a "${SOURCE_ROOT}/scripts/fossilsafe_cli.py" "${INSTALL_DIR}/fsafe-cli.py"
   rsync -a "${SOURCE_REQUIREMENTS}" "${INSTALL_DIR}/requirements.txt"
 else
-  rm -rf "${INSTALL_DIR}/backend" "${INSTALL_DIR}/frontend"
+  rm -rf "${INSTALL_DIR}/backend" "${INSTALL_DIR}/frontend" "${INSTALL_DIR}/packaging"
   cp -a "${SOURCE_ROOT}/backend" "${INSTALL_DIR}/backend"
   cp -a "${SOURCE_ROOT}/frontend" "${INSTALL_DIR}/frontend"
+  cp -a "${SOURCE_ROOT}/packaging" "${INSTALL_DIR}/packaging"
   cp -a "${SOURCE_ROOT}/gunicorn.conf.py" "${INSTALL_DIR}/gunicorn.conf.py"
   cp -a "${SOURCE_ROOT}/scripts/fossilsafe_cli.py" "${INSTALL_DIR}/fsafe-cli.py"
   cp -a "${SOURCE_REQUIREMENTS}" "${INSTALL_DIR}/requirements.txt"
