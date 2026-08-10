@@ -1,0 +1,41 @@
+[Unit]
+Description=FossilSafe LTO Backup Appliance
+Documentation=https://fossilsafe.io
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{SERVICE_USER}}
+Group={{SERVICE_USER}}
+SupplementaryGroups={{TAPE_GROUP}}
+WorkingDirectory={{INSTALL_DIR}}
+Environment=FOSSILSAFE_CONFIG_PATH={{CONFIG_PATH}}
+Environment=FOSSILSAFE_DATA_DIR={{DATA_DIR}}
+Environment=FOSSILSAFE_BACKEND_BIND={{BACKEND_BIND}}
+Environment=FOSSILSAFE_BACKEND_PORT={{BACKEND_PORT}}
+Environment=PYTHONUNBUFFERED=1
+# Create mount/data dirs before ProtectSystem=strict kicks in (+ = root)
+ExecStartPre=+/bin/mkdir -p {{DATA_DIR}} /var/log/fossilsafe /mnt/fossilsafe/nfs /mnt/fossilsafe/smb /mnt/fossilsafe/external /mnt/ltfs
+ExecStart={{VENV_DIR}}/bin/gunicorn -c {{INSTALL_DIR}}/gunicorn.conf.py backend.lto_backend_main:app
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=60
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictRealtime=true
+ReadWritePaths={{DATA_DIR}} {{INSTALL_DIR}} /var/log/fossilsafe /mnt/fossilsafe /mnt/ltfs /etc/fossilsafe
+DeviceAllow=/dev/fuse rw
+DeviceAllow=char-scsi_generic rw
+DeviceAllow=char-scsi_tape rw
+
+[Install]
+WantedBy=multi-user.target

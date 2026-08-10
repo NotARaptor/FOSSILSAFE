@@ -15,7 +15,8 @@ BIND_ADDRESS="${FOSSILSAFE_BACKEND_BIND:-0.0.0.0}"
 BIND_PORT="${FOSSILSAFE_BACKEND_PORT:-5000}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEMPLATE="${SCRIPT_DIR}/../packaging/fossilsafe.service"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+TEMPLATE="${REPO_ROOT}/packaging/fossilsafe.service"
 OUTPUT="/etc/systemd/system/fossilsafe.service"
 
 usage() {
@@ -84,15 +85,23 @@ chmod 750 "$DATA_DIR"
 
 # Generate unit file
 echo "Generating systemd unit file..."
+VENV_DIR="${INSTALL_DIR}/venv"
+# CONFIG_PATH may be a dir (/etc/fossilsafe) or the config.json file itself
+if [[ -d "${CONFIG_PATH}" ]]; then
+    CONFIG_FILE="${CONFIG_PATH%/}/config.json"
+else
+    CONFIG_FILE="${CONFIG_PATH}"
+fi
 sed \
     -e "s|{{INSTALL_DIR}}|$INSTALL_DIR|g" \
     -e "s|{{SERVICE_USER}}|$SERVICE_USER|g" \
     -e "s|{{SERVICE_GROUP}}|$SERVICE_GROUP|g" \
     -e "s|{{TAPE_GROUP}}|$TAPE_GROUP|g" \
-    -e "s|{{CONFIG_PATH}}|$CONFIG_PATH|g" \
+    -e "s|{{CONFIG_PATH}}|$CONFIG_FILE|g" \
     -e "s|{{DATA_DIR}}|$DATA_DIR|g" \
     -e "s|{{BACKEND_BIND}}|$BIND_ADDRESS|g" \
     -e "s|{{BACKEND_PORT}}|$BIND_PORT|g" \
+    -e "s|{{VENV_DIR}}|$VENV_DIR|g" \
     "$TEMPLATE" > "$OUTPUT"
 
 chmod 644 "$OUTPUT"

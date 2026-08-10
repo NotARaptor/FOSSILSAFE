@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { api, Job, Tape } from "../lib/api"
 import RestoreWizard from "@/components/RestoreWizard"
